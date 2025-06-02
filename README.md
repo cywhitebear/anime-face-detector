@@ -26,12 +26,15 @@ The mean images of real images belonging to each cluster:
 ## Installation
 
 ```bash
-pip install openmim
-mim install mmcv-full
-mim install mmdet
-mim install mmpose
+conda create -n anime-face python=3.9
+conda activate anime-face
 
-pip install anime-face-detector
+conda install pytorch==2.0.1 torchvision==0.15.2 torchaudio==2.0.2 pytorch-cuda=11.8 -c pytorch -c nvidia
+pip install mmcv-full==1.5.0
+pip install mmdet==2.28.1
+pip install mmpose==0.24.0
+pip install numpy==1.23.0
+pip install opencv-python-headless==4.6.0.66
 ```
 
 This package is tested only on Ubuntu.
@@ -93,8 +96,8 @@ print(preds[0])
 
 ### Run locally
 ```bash
-pip install gradio
-git clone https://github.com/hysts/anime-face-detector
+pip install gradio==3.41.0
+git clone https://github.com/cywhitebear/anime-face-detector.git
 cd anime-face-detector
 
 python demo_gradio.py
