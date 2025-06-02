@@ -4,6 +4,7 @@ import pathlib
 
 import cv2
 import gradio as gr
+from gradio.components import Image, Slider
 import numpy as np
 import PIL.Image
 import torch
@@ -11,9 +12,14 @@ import torch
 import anime_face_detector
 
 
-def detect(img, face_score_threshold: float, landmark_score_threshold: float,
-           detector: anime_face_detector.LandmarkDetector) -> PIL.Image.Image:
-    image = cv2.imread(img.name)
+def detect(img, face_score_threshold: float, landmark_score_threshold: float) -> PIL.Image.Image:
+    global detector  # Use the global detector object
+
+    # Use img directly as the file path
+    image = cv2.imread(img)
+    if image is None:
+        raise ValueError("Failed to read the image. Please check the file path or format.")
+
     preds = detector(image)
 
     res = image.copy()
@@ -67,29 +73,29 @@ def main():
             'https://raw.githubusercontent.com/hysts/anime-face-detector/main/assets/input.jpg',
             sample_path.as_posix())
 
+    # Define the detector as a global variable
+    global detector
     detector = anime_face_detector.create_detector(args.detector,
                                                    device=args.device)
-    func = functools.partial(detect, detector=detector)
-    func = functools.update_wrapper(func, detect)
 
     title = 'hysts/anime-face-detector'
     description = 'Demo for hysts/anime-face-detector. To use it, simply upload your image, or click one of the examples to load them. Read more at the links below.'
     article = "<a href='https://github.com/hysts/anime-face-detector'>GitHub Repo</a>"
 
     gr.Interface(
-        func,
+        detect,  # Pass the detect function directly
         [
-            gr.inputs.Image(type='file', label='Input'),
-            gr.inputs.Slider(0,
-                             1,
-                             step=args.score_slider_step,
-                             default=args.face_score_threshold,
-                             label='Face Score Threshold'),
-            gr.inputs.Slider(0,
-                             1,
-                             step=args.score_slider_step,
-                             default=args.landmark_score_threshold,
-                             label='Landmark Score Threshold'),
+            Image(type='filepath', label='Input'),
+            Slider(0,
+                   1,
+                   step=args.score_slider_step,
+                   default=args.face_score_threshold,
+                   label='Face Score Threshold'),
+            Slider(0,
+                   1,
+                   step=args.score_slider_step,
+                   default=args.landmark_score_threshold,
+                   label='Landmark Score Threshold'),
         ],
         gr.outputs.Image(type='pil', label='Output'),
         server_port=args.port,
