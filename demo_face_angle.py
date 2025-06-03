@@ -50,30 +50,34 @@ def detect_with_angles(img, face_score_threshold: float, landmark_score_threshol
                 pt = np.round(pt).astype(int)
                 landmarks.append(pt)
                 # Paint the 6 PnP landmarks in blue
-                if i in [23, 2, 22, 14, 20, 16]:  # Specific landmarks for PnP
+                if i in [23, 2, 22, 14, 26, 24]:  # Specific landmarks for PnP
                     color = (255, 0, 0)
                 else:
                     color = (0, 0, 255)
                 cv2.circle(res, tuple(pt), lt, color, cv2.FILLED)
                 # Uncomment the next line to label landmarks
-                # cv2.putText(res, str(i), tuple(pt), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 255, 0), 1)
+                cv2.putText(res, str(i), tuple(pt), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 0, 0), 1)
 
         # Calculate 3D face angles using PnP
-        if len(landmarks) >= 6:  # Ensure we have enough landmarks for PnP
-            pitch, yaw, roll = calculate_3d_angles(landmarks, res.shape[1], res.shape[0])
+        if len(landmarks) >= 4:  # Ensure we have at least 4 landmarks for PnP
+            try:
+                pitch, yaw, roll = calculate_3d_angles(landmarks, res.shape[1], res.shape[0])
 
-            # Draw 3D axes on the face
-            draw_3d_axes(res, landmarks[0], pitch, yaw, roll)
+                if 23 < len(landmarks):  # Check if the landmark index 23 exists
+                    draw_3d_axes(res, landmarks[23], pitch, yaw, roll)
+                else:
+                    draw_3d_axes(res, landmarks[0], pitch, yaw, roll)
 
-            # Add semi-transparent background for text
-            text_bg_color = (0, 0, 0, 128)
-            text_color = (255, 255, 255)
-            font_scale = 0.5
-            thickness = 1
+                text_bg_color = (0, 0, 0, 128)
+                text_color = (255, 255, 255)
+                font_scale = 0.5
+                thickness = 1
 
-            draw_text_with_bg(res, f"Pitch: {pitch:.2f}", (box[0], box[1] - 60), text_color, text_bg_color, font_scale, thickness)
-            draw_text_with_bg(res, f"Yaw: {yaw:.2f}", (box[0], box[1] - 40), text_color, text_bg_color, font_scale, thickness)
-            draw_text_with_bg(res, f"Roll: {roll:.2f}", (box[0], box[1] - 20), text_color, text_bg_color, font_scale, thickness)
+                draw_text_with_bg(res, f"Pitch: {pitch:.2f}", (box[0], box[1] - 60), text_color, text_bg_color, font_scale, thickness)
+                draw_text_with_bg(res, f"Yaw: {yaw:.2f}", (box[0], box[1] - 40), text_color, text_bg_color, font_scale, thickness)
+                draw_text_with_bg(res, f"Roll: {roll:.2f}", (box[0], box[1] - 20), text_color, text_bg_color, font_scale, thickness)
+            except ValueError as e:
+                print(f"PnP calculation skipped: {e}")
 
     res = cv2.cvtColor(res, cv2.COLOR_BGR2RGB)
     image_pil = PIL.Image.fromarray(res)
@@ -178,27 +182,30 @@ def calculate_3d_angles(landmarks: list, image_width: int, image_height: int) ->
         (51.33, 14.67, -55.0),      # Right eye outer bottom corner
         # (-40.33, 14.67, -47.67),    # Left lower eye lid
         # (40.33, 14.67, -47.67),     # Right lower eye lid
-        (-29.33, 14.67, -55.0),     # Left eye inner bottom corner
-        (29.33, 14.67, -55.0)       # Right eye inner bottom corner
-        # (-18.33, -27.5, -25.67),   # Left mouth corner
-        # (18.33, -27.5, -25.67)     # Right mouth corner
+        # (-29.33, 14.67, -55.0),     # Left eye inner bottom corner
+        # (29.33, 14.67, -55.0),      # Right eye inner bottom corner
+        (-18.33, -27.5, -25.67),    # Left mouth corner
+        (18.33, -27.5, -25.67)      # Right mouth corner
     ], dtype=np.float32)
 
-    # Map the detected 2D landmarks to the corresponding 3D model points
-    image_points = np.array([
-        landmarks[23],  # Nose tip
-        landmarks[2],   # Chin
-        # landmarks[19],  # Left eye corner
-        # landmarks[11],  # Right eye corner
-        landmarks[22],  # Left eye outer bottom corner
-        landmarks[14],  # Right eye outer bottom corner
-        # landmarks[21],  # Left lower eye lid
-        # landmarks[15],  # Right lower eye lid
-        landmarks[20],  # Left eye inner bottom corner
-        landmarks[16],  # Right eye inner bottom corner
-        # landmarks[26],  # Left mouth corner
-        # landmarks[24]   # Right mouth corner
-    ], dtype=np.float32)
+    # Required landmark indices
+    required_indices = [23, 2, 22, 14, 26, 24]
+
+    # Filter out missing landmarks
+    valid_model_points = []
+    valid_image_points = []
+    for idx, model_point in zip(required_indices, model_points):
+        if idx < len(landmarks):  # Check if the landmark exists
+            valid_model_points.append(model_point)
+            valid_image_points.append(landmarks[idx])
+
+    # Ensure we have at least 4 points for PnP
+    if len(valid_model_points) < 4:
+        raise ValueError("Not enough landmarks detected for PnP calculation.")
+
+    # Convert to numpy arrays
+    valid_model_points = np.array(valid_model_points, dtype=np.float32)
+    valid_image_points = np.array(valid_image_points, dtype=np.float32)
 
     # Camera matrix (intrinsic parameters)
     focal_length = image_width
@@ -214,7 +221,7 @@ def calculate_3d_angles(landmarks: list, image_width: int, image_height: int) ->
 
     # Solve PnP to get rotation and translation vectors
     success, rotation_vector, translation_vector = cv2.solvePnP(
-        model_points, image_points, camera_matrix, dist_coeffs
+        valid_model_points, valid_image_points, camera_matrix, dist_coeffs
     )
 
     # Convert rotation vector to rotation matrix
