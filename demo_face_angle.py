@@ -50,7 +50,7 @@ def detect_with_angles(img, face_score_threshold: float, landmark_score_threshol
                 pt = np.round(pt).astype(int)
                 landmarks.append(pt)
                 # Paint the 6 PnP landmarks in blue
-                if i in [23, 2, 19, 11, 26, 24]:  # Specific landmarks for PnP
+                if i in [23, 2, 22, 14, 20, 16]:  # Specific landmarks for PnP
                     color = (255, 0, 0)
                 else:
                     color = (0, 0, 255)
@@ -168,24 +168,36 @@ def calculate_3d_angles(landmarks: list, image_width: int, image_height: int) ->
     Returns:
         tuple: (pitch, yaw, roll) in degrees.
     """
-    # Define a 3D model of facial landmarks (example points)
+    # Define a 3D model of facial landmarks
     model_points = np.array([
-        (0.0, 0.0, 0.0),  # Nose tip
-        (0.0, -55.0, -29.33),  # Chin
-        (-62.33, 29.33, -62.33),  # Left eye corner
-        (62.33, 29.33, -62.33),  # Right eye corner
-        (-18.33, -27.5, -25.67),  # Left mouth corner
-        (18.33, -27.5, -25.67)  # Right mouth corner
+        (0.0, 0.0, 0.0),           # Nose tip
+        (0.0, -55.0, -29.33),      # Chin
+        # (-62.33, 29.33, -62.33),   # Left eye corner
+        # (62.33, 29.33, -62.33),    # Right eye corner
+        (-51.33, 14.67, -55.0),     # Left eye outer bottom corner
+        (51.33, 14.67, -55.0),      # Right eye outer bottom corner
+        # (-40.33, 14.67, -47.67),    # Left lower eye lid
+        # (40.33, 14.67, -47.67),     # Right lower eye lid
+        (-29.33, 14.67, -55.0),     # Left eye inner bottom corner
+        (29.33, 14.67, -55.0)       # Right eye inner bottom corner
+        # (-18.33, -27.5, -25.67),   # Left mouth corner
+        # (18.33, -27.5, -25.67)     # Right mouth corner
     ], dtype=np.float32)
 
     # Map the detected 2D landmarks to the corresponding 3D model points
     image_points = np.array([
         landmarks[23],  # Nose tip
-        landmarks[2],  # Chin
-        landmarks[19],  # Left eye corner
-        landmarks[11],  # Right eye corner
-        landmarks[26],  # Left mouth corner
-        landmarks[24]   # Right mouth corner
+        landmarks[2],   # Chin
+        # landmarks[19],  # Left eye corner
+        # landmarks[11],  # Right eye corner
+        landmarks[22],  # Left eye outer bottom corner
+        landmarks[14],  # Right eye outer bottom corner
+        # landmarks[21],  # Left lower eye lid
+        # landmarks[15],  # Right lower eye lid
+        landmarks[20],  # Left eye inner bottom corner
+        landmarks[16],  # Right eye inner bottom corner
+        # landmarks[26],  # Left mouth corner
+        # landmarks[24]   # Right mouth corner
     ], dtype=np.float32)
 
     # Camera matrix (intrinsic parameters)
