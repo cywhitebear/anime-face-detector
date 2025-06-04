@@ -100,7 +100,7 @@ pip install gradio==3.41.0
 git clone https://github.com/cywhitebear/anime-face-detector.git
 cd anime-face-detector
 
-python demo_gradio.py
+python demo_face_angle.py
 ```
 
 ## Citation
