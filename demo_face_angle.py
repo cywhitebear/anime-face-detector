@@ -174,18 +174,12 @@ def calculate_3d_angles(landmarks: list, image_width: int, image_height: int) ->
     """
     # Define a 3D model of facial landmarks
     model_points = np.array([
-        (0.0, 0.0, 0.0),           # Nose tip
-        (0.0, -55.0, -29.33),      # Chin
-        # (-62.33, 29.33, -62.33),   # Left eye corner
-        # (62.33, 29.33, -62.33),    # Right eye corner
-        (-51.33, 14.67, -55.0),     # Left eye outer bottom corner
-        (51.33, 14.67, -55.0),      # Right eye outer bottom corner
-        # (-40.33, 14.67, -47.67),    # Left lower eye lid
-        # (40.33, 14.67, -47.67),     # Right lower eye lid
-        # (-29.33, 14.67, -55.0),     # Left eye inner bottom corner
-        # (29.33, 14.67, -55.0),      # Right eye inner bottom corner
-        (-18.33, -27.5, -25.67),    # Left mouth corner
-        (18.33, -27.5, -25.67)      # Right mouth corner
+        (0.0, 0.0, 0.0),          # Nose tip
+        (0.0, -55.0, -29.33),     # Chin
+        (-40.33, 10.0, -55.0),     # Left eye outer bottom corner
+        (40.33, 10.0, -55.0),      # Right eye outer bottom corner
+        (-18.33, -27.5, -36.66),    # Left mouth corner
+        (18.33, -27.5, -36.66)      # Right mouth corner
     ], dtype=np.float32)
 
     # Required landmark indices
@@ -199,8 +193,8 @@ def calculate_3d_angles(landmarks: list, image_width: int, image_height: int) ->
             valid_model_points.append(model_point)
             valid_image_points.append(landmarks[idx])
 
-    # Ensure we have at least 4 points for PnP
-    if len(valid_model_points) < 4:
+    # Ensure we have at least 6 points for PnP
+    if len(valid_model_points) < 6:
         raise ValueError("Not enough landmarks detected for PnP calculation.")
 
     # Convert to numpy arrays
